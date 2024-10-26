@@ -18,3 +18,9 @@ func getAccountAccessor(
 ) (AccountDataAccessor, func(), error) {
 	panic(wire.Build(wireSetInternal))
 }
+
+func getMessageAccessor(
+	path configs.ConfigFilePath,
+) (MessageDataAccessor, func(), error) {
+	panic(wire.Build(wireSetInternal))
+}

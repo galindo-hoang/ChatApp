@@ -9,14 +9,14 @@ import (
 	"time"
 )
 
-type testContext struct {
+type testAccountContext struct {
 	some                string
 	accountDataAccessor AccountDataAccessor
 	cleanUp             func()
 	context             int64
 }
 
-func (c *testContext) beforeEachCreate() {
+func (c *testAccountContext) beforeEachCreate() {
 	access, cleanUp, err := getAccountAccessor("../../../configs/configs_test.yaml")
 	if err != nil {
 		cleanUp()
@@ -26,7 +26,7 @@ func (c *testContext) beforeEachCreate() {
 	c.cleanUp = cleanUp
 }
 
-func (c *testContext) afterEachCreate() {
+func (c *testAccountContext) afterEachCreate() {
 	err := c.accountDataAccessor.DeleteAll(context.Background())
 	if err != nil {
 		fmt.Printf("fail to delete all accounts: %s \n", err)
@@ -34,9 +34,9 @@ func (c *testContext) afterEachCreate() {
 	c.cleanUp()
 }
 
-func testCaseCreate(test func(t *testing.T, c *testContext)) func(*testing.T) {
+func testCaseCreate(test func(t *testing.T, c *testAccountContext)) func(*testing.T) {
 	return func(t *testing.T) {
-		ctx := &testContext{}
+		ctx := &testAccountContext{}
 		ctx.beforeEachCreate()
 		defer ctx.afterEachCreate()
 		test(t, ctx)
@@ -44,7 +44,7 @@ func testCaseCreate(test func(t *testing.T, c *testContext)) func(*testing.T) {
 }
 
 func Test_CreateAccount(t *testing.T) {
-	t.Run("create data", testCaseCreate(func(t *testing.T, c *testContext) {
+	t.Run("create data", testCaseCreate(func(t *testing.T, c *testAccountContext) {
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 		defer cancel()
 		acc, err := c.accountDataAccessor.CreateAccount(ctx, &Accounts{AccountName: "1", Email: "asd", Password: "123"})
@@ -55,15 +55,15 @@ func Test_CreateAccount(t *testing.T) {
 		}
 	}))
 
-	t.Run("create with duplicate email", testCaseCreate(func(t *testing.T, c *testContext) {
+	t.Run("create with duplicate email", testCaseCreate(func(t *testing.T, c *testAccountContext) {
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 		defer cancel()
-		_, err := c.accountDataAccessor.CreateAccount(ctx, &Accounts{AccountName: "1", Email: "asd", Password: "123"})
+		_, err := c.accountDataAccessor.CreateAccount(ctx, &Accounts{AccountName: "1", Email: "asd1", Password: "123"})
 		if err != nil {
 			fmt.Println(err)
 			assert.Error(t, err)
 		} else {
-			_, err := c.accountDataAccessor.CreateAccount(ctx, &Accounts{AccountName: "1", Email: "asd", Password: "123"})
+			_, err := c.accountDataAccessor.CreateAccount(ctx, &Accounts{AccountName: "1", Email: "asd1", Password: "123"})
 			if err != nil {
 				assert.True(t, true)
 			} else {
@@ -72,10 +72,10 @@ func Test_CreateAccount(t *testing.T) {
 		}
 	}))
 
-	t.Run("create with empty name", testCaseCreate(func(t *testing.T, c *testContext) {
+	t.Run("create with empty name", testCaseCreate(func(t *testing.T, c *testAccountContext) {
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 		defer cancel()
-		_, err := c.accountDataAccessor.CreateAccount(ctx, &Accounts{Email: "asd", Password: "123"})
+		_, err := c.accountDataAccessor.CreateAccount(ctx, &Accounts{Email: "asd123", Password: "123"})
 		if err != nil {
 			assert.True(t, true)
 		} else {
@@ -83,10 +83,10 @@ func Test_CreateAccount(t *testing.T) {
 		}
 	}))
 
-	t.Run("create with empty password", testCaseCreate(func(t *testing.T, c *testContext) {
+	t.Run("create with empty password", testCaseCreate(func(t *testing.T, c *testAccountContext) {
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 		defer cancel()
-		_, err := c.accountDataAccessor.CreateAccount(ctx, &Accounts{AccountName: "1", Email: "asd"})
+		_, err := c.accountDataAccessor.CreateAccount(ctx, &Accounts{AccountName: "1", Email: "asd432"})
 		if err != nil {
 			assert.True(t, true)
 		} else {

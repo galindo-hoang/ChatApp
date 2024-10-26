@@ -11,6 +11,10 @@ import (
 	"github.com/google/wire"
 )
 
+import (
+	_ "embed"
+)
+
 // Injectors from wire.go:
 
 func getAccountAccessor(path configs.ConfigFilePath) (AccountDataAccessor, func(), error) {
@@ -30,6 +34,27 @@ func getAccountAccessor(path configs.ConfigFilePath) (AccountDataAccessor, func(
 	}
 	databaseAccountDataAccessor := InitializeAccountDataAccessor(gormDB)
 	return databaseAccountDataAccessor, func() {
+		cleanup()
+	}, nil
+}
+
+func getMessageAccessor(path configs.ConfigFilePath) (MessageDataAccessor, func(), error) {
+	config, err := configs.NewConfig(path)
+	if err != nil {
+		return nil, nil, err
+	}
+	database := config.Database
+	db, cleanup, err := InitializeAndMigrateUpDB(database)
+	if err != nil {
+		return nil, nil, err
+	}
+	gormDB, err := InitializeGorm(db, database)
+	if err != nil {
+		cleanup()
+		return nil, nil, err
+	}
+	databaseMessageDataAccessor := InitializeMessageDataAccessor(gormDB)
+	return databaseMessageDataAccessor, func() {
 		cleanup()
 	}, nil
 }

@@ -9,17 +9,24 @@ import (
 
 type Messages struct {
 	ID          uint64    `gorm:"primaryKey; column:message_id; index; AUTO_INCREMENT"`
-	MessageFrom uint64    `gorm:"column:message_from"`
+	MessageFrom *uint64   `gorm:"column:message_from"`
 	MessageTo   uint64    `gorm:"column:message_to"`
-	Content     string    `gorm:"column:content"`
-	CreatedAt   time.Time `gorm:"column:created_at"`
-	UpdateAt    time.Time `gorm:"column:created_at"`
+	Content     string    `gorm:"column:content; NOT NULL; check:length(content)>0"`
+	CreatedAt   time.Time `gorm:"column:created_at; NOT NULL"`
+	UpdateAt    time.Time `gorm:"column:created_at; NOT NULL"`
+
+	// foreign key
+	AccountFrom Accounts `gorm:"foreignKey:message_from"`
+	AccountTo   Accounts `gorm:"foreignKey:message_to"`
 }
 
 type MessageDataAccessor interface {
-	CreateMessage(ctx context.Context, message *Messages) (*Messages, error)
-	EditMessage(ctx context.Context, message *Messages) (*Messages, error)
+	DeleteAll(ctx context.Context) error
 	DeleteMessage(ctx context.Context, id uint64) error
+	getMessageByID(ctx context.Context, id uint64) (*Messages, error)
+	EditMessage(ctx context.Context, message *Messages) (*Messages, error)
+	CreateMessage(ctx context.Context, message *Messages) (*Messages, error)
+	GetMessages(ctx context.Context, messageFrom, messageTo, offSet, limit uint64) ([]*Messages, error)
 }
 
 type messageDataAccessor struct {
@@ -27,6 +34,9 @@ type messageDataAccessor struct {
 }
 
 func (m messageDataAccessor) CreateMessage(ctx context.Context, message *Messages) (*Messages, error) {
+	curTime := time.Now()
+	message.CreatedAt = curTime
+	message.UpdateAt = curTime
 	tx := m.database.Create(message)
 	if tx.Error != nil {
 		return nil, tx.Error
@@ -35,11 +45,20 @@ func (m messageDataAccessor) CreateMessage(ctx context.Context, message *Message
 }
 
 func (m messageDataAccessor) DeleteMessage(ctx context.Context, id uint64) error {
-	tx := m.database.Raw("update messages set message_from = null where ID = ?", id)
+	tx := m.database.Exec("update messages set message_from = null where message_id = ?", id)
 	if tx.Error != nil {
 		return tx.Error
 	}
 	return nil
+}
+
+func (m messageDataAccessor) getMessageByID(ctx context.Context, id uint64) (*Messages, error) {
+	var res Messages
+	tx := m.database.Raw("select * from messages where message_id = ?", id).Scan(&res)
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
+	return &res, nil
 }
 
 func (m messageDataAccessor) EditMessage(ctx context.Context, message *Messages) (*Messages, error) {
@@ -49,6 +68,7 @@ func (m messageDataAccessor) EditMessage(ctx context.Context, message *Messages)
 	// 	time.Now(),
 	// 	message.ID,
 	// )
+	message.UpdateAt = time.Now()
 
 	tx := m.database.Save(&message)
 	if tx.Error != nil {
@@ -56,6 +76,23 @@ func (m messageDataAccessor) EditMessage(ctx context.Context, message *Messages)
 	}
 
 	return message, nil
+}
+
+func (m messageDataAccessor) DeleteAll(ctx context.Context) error {
+	tx := m.database.Exec("truncate table messages")
+	if tx.Error != nil {
+		return tx.Error
+	}
+	return nil
+}
+
+func (m messageDataAccessor) GetMessages(ctx context.Context, messageFrom, messageTo, offSet, limit uint64) ([]*Messages, error) {
+	var messages []*Messages
+	tx := m.database.Raw("select * from messages where message_from = ? and message_to = ? limit ? offset ?", messageFrom, messageTo, limit, offSet).Scan(&messages)
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
+	return messages, nil
 }
 
 func InitializeMessageDataAccessor(database *gorm.DB) MessageDataAccessor {
