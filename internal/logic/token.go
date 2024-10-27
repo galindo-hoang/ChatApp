@@ -46,7 +46,7 @@ func (t *token) GetToken(ctx context.Context, accountID uint64) (string, time.Ti
 		//"kid": t.tokenPublicKeyID,
 	})
 
-	tokenString, err := token.SignedString(t.signedKey)
+	tokenString, err := token.SignedString([]byte(t.signedKey))
 	if err != nil {
 		fmt.Println(err.Error())
 		return "", time.Time{}, err
