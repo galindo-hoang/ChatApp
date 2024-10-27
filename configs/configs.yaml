@@ -7,3 +7,9 @@ database:
   type: mysql
 http:
   address: "0.0.0.0:8081"
+auth:
+  hash:
+    cost: 10
+  token:
+    expires_in: 24
+    signed_key: hello_world

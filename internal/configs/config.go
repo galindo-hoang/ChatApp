@@ -12,6 +12,7 @@ type ConfigFilePath string
 
 type Config struct {
 	Database Database `yaml:"database"`
+	Auth     Auth     `yaml:"auth"`
 }
 
 func NewConfig(filePath ConfigFilePath) (Config, error) {

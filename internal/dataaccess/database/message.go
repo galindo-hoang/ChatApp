@@ -16,7 +16,7 @@ type Messages struct {
 	UpdateAt    time.Time `gorm:"column:created_at; NOT NULL"`
 
 	// foreign key
-	AccountFrom Accounts `gorm:"foreignKey:message_from"`
+	AccountFrom Accounts `gorm:"foreignKey:message_from; constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 	AccountTo   Accounts `gorm:"foreignKey:message_to"`
 }
 
@@ -79,7 +79,7 @@ func (m messageDataAccessor) EditMessage(ctx context.Context, message *Messages)
 }
 
 func (m messageDataAccessor) DeleteAll(ctx context.Context) error {
-	tx := m.database.Exec("truncate table messages")
+	tx := m.database.Exec("delete from messages")
 	if tx.Error != nil {
 		return tx.Error
 	}

@@ -139,6 +139,7 @@ func Test_GetAccountWithEmail(t *testing.T) {
 	}
 
 	defer func() {
+		fmt.Println("asd============================")
 		err := access.DeleteAll(context.Background())
 		if err != nil {
 			fmt.Printf("fail to delete all accounts: %s \n", err)
@@ -161,8 +162,16 @@ func Test_GetAccountWithEmail(t *testing.T) {
 
 	t.Run("get data with non-existing account", func(t *testing.T) {
 		res, err := access.GetAccountByEmail(context.Background(), "qwe")
-		if res != nil || err != nil {
-			assert.Fail(t, "expected error")
+		fmt.Printf("res: %v || %v", res, err)
+		if err != nil {
+			assert.Fail(t, err.Error())
+			return
+		}
+
+		if res == nil {
+			assert.True(t, true)
+		} else {
+			assert.Fail(t, "expected not found")
 		}
 	})
 }
