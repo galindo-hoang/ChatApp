@@ -1,5 +1,10 @@
 package main
 
+import (
+	"context"
+	"github.com/ChatService/internal/wiring"
+)
+
 type ContB string
 
 type A struct {
@@ -58,6 +63,12 @@ func ContentB(a A, conten ContB) B {
 // }
 
 func main() {
-	// user := Initialize()
-	// Run(user)
+	server, f, err := wiring.InitializeStandaloneServer("")
+	if err != nil {
+		f()
+		panic(err)
+	}
+	defer f()
+
+	server.Start(context.Background())
 }

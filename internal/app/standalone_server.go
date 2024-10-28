@@ -1,18 +1,26 @@
 package app
 
-import "github.com/ChatService/internal/dataaccess/database"
+import (
+	"context"
+	"github.com/ChatService/internal/handler/http"
+)
 
-type StandaloneServer struct {
-	accountAccessor database.AccountDataAccessor
-	messageAccessor database.MessageDataAccessor
+type StandaloneServer interface {
+	Start(ctx context.Context)
+}
+
+type standaloneServer struct {
+	httpServer http.HttpServer
+}
+
+func (s *standaloneServer) Start(ctx context.Context) {
+	s.httpServer.Start(ctx)
 }
 
 func NewStandaloneServer(
-	account database.AccountDataAccessor,
-	message database.MessageDataAccessor,
-) *StandaloneServer {
-	return &StandaloneServer{
-		accountAccessor: account,
-		messageAccessor: message,
+	httpServer http.HttpServer,
+) StandaloneServer {
+	return &standaloneServer{
+		httpServer: httpServer,
 	}
 }
