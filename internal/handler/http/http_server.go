@@ -29,6 +29,7 @@ func NewHttpServer(accountLogic logic.Account, configs configs.Config) HttpServe
 
 func (h *httpServer) Start(ctx context.Context) {
 	http.HandleFunc("/v1/sessions", h.createSession)
+	http.HandleFunc("/v1/sessions/verify", h.verifySession)
 	http.HandleFunc("/v1/accounts", h.createAccount)
 
 	fmt.Printf("listenning address %v\n", h.configs.Http.Address)
@@ -117,9 +118,11 @@ func (h *httpServer) createSession(w http.ResponseWriter, r *http.Request) {
 			Success: false,
 			Message: "body format error",
 		})
+		return
 	}
 
-	ctx, _ := context.WithTimeout(context.Background(), 1*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
 
 	res, err := h.accountLogic.CreateSession(ctx, parsedBody)
 	if err != nil {
@@ -136,4 +139,41 @@ func (h *httpServer) createSession(w http.ResponseWriter, r *http.Request) {
 		Success: true,
 		Message: "",
 	})
+}
+
+func (h *httpServer) verifySession(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "GET" {
+		jsonResHttp(w, http.StatusMethodNotAllowed, Response[any]{
+			Data:    nil,
+			Success: false,
+			Message: "method not allowed",
+		})
+		return
+	}
+
+	var session = r.Header.Get("session")
+	if session == "" {
+		jsonResHttp(w, http.StatusUnauthorized, Response[any]{
+			Data:    nil,
+			Success: true,
+			Message: "",
+		})
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+
+	if err := h.accountLogic.ValidateSession(ctx, session); err != nil {
+		jsonResHttp(w, http.StatusUnauthorized, Response[any]{
+			Data:    nil,
+			Success: true,
+			Message: err.Error(),
+		})
+	} else {
+		jsonResHttp(w, http.StatusAccepted, Response[any]{
+			Data:    nil,
+			Success: true,
+			Message: "",
+		})
+	}
 }

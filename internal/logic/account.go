@@ -7,11 +7,13 @@ import (
 	"github.com/ChatService/internal/dataaccess/cache"
 	"github.com/ChatService/internal/dataaccess/database"
 	"gorm.io/gorm"
+	"time"
 )
 
 type Account interface {
 	CreateAccount(ctx context.Context, params CreateAccountParams) (CreateAccountResponse, error)
 	CreateSession(ctx context.Context, params CreateSessionParams) (CreateSessionResponse, error)
+	ValidateSession(ctx context.Context, session string) error
 }
 
 type account struct {
@@ -130,4 +132,24 @@ func (a *account) CreateSession(ctx context.Context, params CreateSessionParams)
 		AccessToken: token,
 	}, nil
 
+}
+
+func (a *account) ValidateSession(ctx context.Context, session string) error {
+	fmt.Println("ValidateSession checking...")
+
+	id, ti, err := a.tokenLogic.GetAccountIDAndExpireTime(ctx, session)
+	if err != nil {
+		return err
+	}
+
+	if ti.Before(time.Now()) {
+		return errors.New("token is invalid")
+	}
+
+	account, err := a.accountDataAccessor.GetAccountByID(ctx, id)
+	if err != nil || account == nil {
+		return errors.New("token is invalid")
+	}
+
+	return nil
 }
