@@ -1,19 +1,19 @@
 package logic
 
 type CreateAccountParams struct {
-	Email       string
-	AccountName string
-	Password    string
+	Email       string `json:"email"`
+	AccountName string `json:"account_name"`
+	Password    string `json:"password"`
 }
 
 type CreateAccountResponse struct {
-	ID    uint64
-	Email string
+	ID    uint64 `json:"id"`
+	Email string `json:"email"`
 }
 
 type CreateSessionParams struct {
-	AccountName string
-	Password    string
+	AccountName string `json:"account_name"`
+	Password    string `json:"password"`
 }
 
 type AccountResponse struct {
