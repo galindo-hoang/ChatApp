@@ -81,15 +81,7 @@ func (h *httpServer) createAccount(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-	defer func() {
-		cancel()
-		jsonResHttp(w, http.StatusRequestTimeout, Response[any]{
-			Data:    nil,
-			Success: false,
-			Message: "request timeout",
-		})
-		return
-	}()
+	defer cancel()
 
 	res, err := h.accountLogic.CreateAccount(ctx, parsedBody)
 	if err != nil {
@@ -127,16 +119,7 @@ func (h *httpServer) createSession(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-	defer func() {
-		cancel()
-		jsonResHttp(w, http.StatusRequestTimeout, Response[any]{
-			Data:    nil,
-			Success: false,
-			Message: "request timeout",
-		})
-		return
-	}()
+	ctx, _ := context.WithTimeout(context.Background(), 1*time.Second)
 
 	res, err := h.accountLogic.CreateSession(ctx, parsedBody)
 	if err != nil {

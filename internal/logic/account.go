@@ -99,7 +99,7 @@ func (a *account) CreateAccount(ctx context.Context, params CreateAccountParams)
 }
 
 func (a *account) CreateSession(ctx context.Context, params CreateSessionParams) (CreateSessionResponse, error) {
-	account, err := a.accountDataAccessor.GetAccountByEmail(ctx, params.AccountName)
+	account, err := a.accountDataAccessor.GetAccountByEmail(ctx, params.Email)
 	if err != nil {
 		return CreateSessionResponse{}, err
 	}

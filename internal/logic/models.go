@@ -12,8 +12,8 @@ type CreateAccountResponse struct {
 }
 
 type CreateSessionParams struct {
-	AccountName string `json:"account_name"`
-	Password    string `json:"password"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 type AccountResponse struct {
