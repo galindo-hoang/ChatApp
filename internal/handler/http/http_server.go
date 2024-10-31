@@ -27,10 +27,22 @@ func NewHttpServer(accountLogic logic.Account, configs configs.Config) HttpServe
 	}
 }
 
+func enableCors(funcHandler func(http.ResponseWriter, *http.Request)) func(http.ResponseWriter, *http.Request) {
+	fmt.Println("set up")
+	return func(w http.ResponseWriter, r *http.Request) {
+		r.Header.Set("Access-Control-Allow-Origin", "*")
+		r.Header.Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		r.Header.Set("Access-Control-Allow-Headers", "Origin, Content-Type, Accept")
+		r.Header.Set("Content-Type", "application/json")
+		funcHandler(w, r)
+	}
+}
+
 func (h *httpServer) Start(ctx context.Context) {
-	http.HandleFunc("/v1/sessions", h.createSession)
-	http.HandleFunc("/v1/sessions/verify", h.verifySession)
-	http.HandleFunc("/v1/accounts", h.createAccount)
+
+	http.HandleFunc("/v1/sessions", enableCors(h.createSession))
+	http.HandleFunc("/v1/sessions/verify", enableCors(h.verifySession))
+	http.HandleFunc("/v1/accounts", enableCors(h.createAccount))
 
 	fmt.Printf("listenning address %v\n", h.configs.Http.Address)
 	if err := http.ListenAndServe(h.configs.Http.Address, nil); err != nil {
@@ -142,6 +154,14 @@ func (h *httpServer) createSession(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *httpServer) verifySession(w http.ResponseWriter, r *http.Request) {
+
+	fmt.Println(r.Method)
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Origin, Content-Type, Accept")
+	w.Header().Set("Content-Type", "application/json")
+
+	//(w).Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
 	if r.Method != "GET" {
 		jsonResHttp(w, http.StatusMethodNotAllowed, Response[any]{
 			Data:    nil,
