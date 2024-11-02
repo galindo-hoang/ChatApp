@@ -1,0 +1,29 @@
+.message-list {
+    list-style-type: none;
+    padding: 0;
+    flex: 1;
+    overflow-y: auto;
+}
+
+.message-item {
+    padding: 10px;
+    margin: 5px 0;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.message-sender {
+    font-weight: bold;
+    margin-right: 5px;
+}
+
+.message-text {
+    color: #333;
+}
+
+.message-timestamp {
+    float: right;
+    color: #aaa;
+    font-size: 0.8em;
+}

@@ -1,0 +1,28 @@
+.friend-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+.friend-item {
+    padding: 10px;
+    margin: 5px 0;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
+    cursor: pointer;
+}
+
+.friend-item.online {
+    background-color: #e7f4e4;
+}
+
+.friend-item.offline {
+    background-color: #f8d7da;
+}
+
+.friend-item:hover {
+    background-color: #3498db;
+    color: white;
+}
