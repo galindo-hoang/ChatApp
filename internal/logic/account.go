@@ -101,6 +101,7 @@ func (a *account) CreateAccount(ctx context.Context, params CreateAccountParams)
 }
 
 func (a *account) CreateSession(ctx context.Context, params CreateSessionParams) (CreateSessionResponse, error) {
+	fmt.Println("CreateSession...")
 	account, err := a.accountDataAccessor.GetAccountByEmail(ctx, params.Email)
 	if err != nil {
 		return CreateSessionResponse{}, err
@@ -124,7 +125,7 @@ func (a *account) CreateSession(ctx context.Context, params CreateSessionParams)
 	}
 
 	return CreateSessionResponse{
-		account: AccountResponse{
+		Account: AccountResponse{
 			ID:          account.Id,
 			Email:       account.Email,
 			AccountName: account.AccountName,

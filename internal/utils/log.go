@@ -21,4 +21,4 @@ func getZapLoggerLevel(level string) zap.AtomicLevel {
 	}
 }
 
-// func InitializaLogger(logConfig configs.Log)
+// func InitializaLogger(logConfig api.Log)

@@ -23,7 +23,7 @@ type AccountResponse struct {
 }
 
 type CreateSessionResponse struct {
-	account      AccountResponse
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
+	Account      AccountResponse `json:"account"`
+	AccessToken  string          `json:"access_token"`
+	RefreshToken string          `json:"refresh_token"`
 }

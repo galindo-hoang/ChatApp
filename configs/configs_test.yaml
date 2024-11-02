@@ -12,3 +12,4 @@ auth:
     cost: 10
   token:
     expires_in: 24
+    signed_key: hello_world

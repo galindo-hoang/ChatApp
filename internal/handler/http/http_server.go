@@ -8,6 +8,7 @@ import (
 	"github.com/ChatService/internal/logic"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -27,22 +28,31 @@ func NewHttpServer(accountLogic logic.Account, configs configs.Config) HttpServe
 	}
 }
 
-func enableCors(funcHandler func(http.ResponseWriter, *http.Request)) func(http.ResponseWriter, *http.Request) {
+func middleware(funcHandler func(http.ResponseWriter, *http.Request)) func(http.ResponseWriter, *http.Request) {
 	fmt.Println("set up")
 	return func(w http.ResponseWriter, r *http.Request) {
-		r.Header.Set("Access-Control-Allow-Origin", "*")
-		r.Header.Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-		r.Header.Set("Access-Control-Allow-Headers", "Origin, Content-Type, Accept")
-		r.Header.Set("Content-Type", "application/json")
+		fmt.Println("running....")
+		// Set json
+		w.Header().Set("Content-Type", "application/json")
+
+		// Set CORS headers
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "*")
+
+		// Handle preflight (OPTIONS) request
+		if r.Method == "OPTIONS" {
+			return
+		}
 		funcHandler(w, r)
 	}
 }
 
 func (h *httpServer) Start(ctx context.Context) {
 
-	http.HandleFunc("/v1/sessions", enableCors(h.createSession))
-	http.HandleFunc("/v1/sessions/verify", enableCors(h.verifySession))
-	http.HandleFunc("/v1/accounts", enableCors(h.createAccount))
+	http.HandleFunc("/v1/sessions", middleware(h.createSession))
+	http.HandleFunc("/v1/sessions/verify", middleware(h.verifySession))
+	http.HandleFunc("/v1/accounts", middleware(h.createAccount))
 
 	fmt.Printf("listenning address %v\n", h.configs.Http.Address)
 	if err := http.ListenAndServe(h.configs.Http.Address, nil); err != nil {
@@ -154,14 +164,6 @@ func (h *httpServer) createSession(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *httpServer) verifySession(w http.ResponseWriter, r *http.Request) {
-
-	fmt.Println(r.Method)
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-	w.Header().Set("Access-Control-Allow-Headers", "Origin, Content-Type, Accept")
-	w.Header().Set("Content-Type", "application/json")
-
-	//(w).Header().Set("Access-Control-Allow-Origin", "http://localhost:3000")
 	if r.Method != "GET" {
 		jsonResHttp(w, http.StatusMethodNotAllowed, Response[any]{
 			Data:    nil,
@@ -171,7 +173,7 @@ func (h *httpServer) verifySession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var session = r.Header.Get("session")
+	var session = strings.Split(r.Header.Get("Authorization"), " ")[1]
 	if session == "" {
 		jsonResHttp(w, http.StatusUnauthorized, Response[any]{
 			Data:    nil,

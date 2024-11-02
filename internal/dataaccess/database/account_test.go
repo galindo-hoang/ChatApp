@@ -139,7 +139,6 @@ func Test_GetAccountWithEmail(t *testing.T) {
 	}
 
 	defer func() {
-		fmt.Println("asd============================")
 		err := access.DeleteAll(context.Background())
 		if err != nil {
 			fmt.Printf("fail to delete all accounts: %s \n", err)
