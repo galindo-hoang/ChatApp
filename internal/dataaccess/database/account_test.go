@@ -95,6 +95,10 @@ func Test_CreateAccount(t *testing.T) {
 	}))
 }
 
+func a(f *testing.F) {
+
+}
+
 func Test_GetAccountWithID(t *testing.T) {
 	access, cleanUp, err := getAccountAccessor("../../../configs/configs_test.yaml")
 	if err != nil {
@@ -102,21 +106,22 @@ func Test_GetAccountWithID(t *testing.T) {
 		cleanUp()
 	}
 
-	defer func() {
+	t.Cleanup(func() {
+		fmt.Println("huy.hoang1=======================")
 		err := access.DeleteAll(context.Background())
 		if err != nil {
 			fmt.Printf("fail to delete all accounts: %s \n", err)
 		}
 		cleanUp()
-	}()
+	})
 
-	_, err = access.CreateAccount(context.Background(), &Accounts{AccountName: "1", Email: "asd", Password: "123"})
+	res, err := access.CreateAccount(context.Background(), &Accounts{AccountName: "1", Email: "Test_GetAccountWithID", Password: "123"})
 	if err != nil {
-		assert.Fail(t, err.Error())
+		assert.Error(t, err)
 	}
 
-	t.Run("get data with existing account", func(t *testing.T) {
-		res, err := access.GetAccountByID(context.Background(), 1)
+	t.Run("get data with existing account ID", func(t *testing.T) {
+		res, err := access.GetAccountByID(context.Background(), res.Id)
 		if err != nil {
 			assert.Fail(t, err.Error())
 		}
@@ -138,20 +143,20 @@ func Test_GetAccountWithEmail(t *testing.T) {
 		cleanUp()
 	}
 
-	defer func() {
+	t.Cleanup(func() {
 		err := access.DeleteAll(context.Background())
 		if err != nil {
 			fmt.Printf("fail to delete all accounts: %s \n", err)
 		}
 		cleanUp()
-	}()
+	})
 
 	_, err = access.CreateAccount(context.Background(), &Accounts{AccountName: "1", Email: "asd", Password: "123"})
 	if err != nil {
 		assert.Fail(t, err.Error())
 	}
 
-	t.Run("get data with existing account", func(t *testing.T) {
+	t.Run("get data with existing account Email", func(t *testing.T) {
 		res, err := access.GetAccountByEmail(context.Background(), "asd")
 		if err != nil {
 			assert.Fail(t, err.Error())

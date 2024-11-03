@@ -52,7 +52,7 @@ func (a accountDataAccessor) GetAccountByEmail(ctx context.Context, email string
 
 func (a accountDataAccessor) DeleteAll(ctx context.Context) error {
 	// difference between truncate and delete
-	tx := a.database.WithContext(ctx).Exec("delete from accounts")
+	tx := a.database.WithContext(ctx).Where("1 = 1").Delete(&Accounts{})
 	if tx.Error != nil {
 		return tx.Error
 	}

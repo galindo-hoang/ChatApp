@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"gorm.io/gorm"
@@ -16,8 +17,8 @@ type Messages struct {
 	UpdateAt    time.Time `gorm:"column:created_at; NOT NULL"`
 
 	// foreign key
-	AccountFrom Accounts `gorm:"foreignKey:message_from; constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
-	AccountTo   Accounts `gorm:"foreignKey:message_to"`
+	AccountFrom *Accounts `gorm:"foreignKey:message_from; constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
+	AccountTo   *Accounts `gorm:"foreignKey:message_to"`
 }
 
 type MessageDataAccessor interface {
@@ -34,10 +35,13 @@ type messageDataAccessor struct {
 }
 
 func (m messageDataAccessor) CreateMessage(ctx context.Context, message *Messages) (*Messages, error) {
+	if message.AccountFrom == nil {
+		return nil, errors.New("message from cannot be nil")
+	}
 	curTime := time.Now()
 	message.CreatedAt = curTime
 	message.UpdateAt = curTime
-	tx := m.database.Create(message)
+	tx := m.database.WithContext(ctx).Create(message)
 	if tx.Error != nil {
 		return nil, tx.Error
 	}
@@ -45,7 +49,7 @@ func (m messageDataAccessor) CreateMessage(ctx context.Context, message *Message
 }
 
 func (m messageDataAccessor) DeleteMessage(ctx context.Context, id uint64) error {
-	tx := m.database.Exec("update messages set message_from = null where message_id = ?", id)
+	tx := m.database.WithContext(ctx).Exec("update messages set message_from = null where message_id = ?", id)
 	if tx.Error != nil {
 		return tx.Error
 	}
@@ -54,7 +58,7 @@ func (m messageDataAccessor) DeleteMessage(ctx context.Context, id uint64) error
 
 func (m messageDataAccessor) getMessageByID(ctx context.Context, id uint64) (*Messages, error) {
 	var res Messages
-	tx := m.database.Raw("select * from messages where message_id = ?", id).Scan(&res)
+	tx := m.database.WithContext(ctx).Raw("select * from messages where message_id = ?", id).Scan(&res)
 	if tx.Error != nil {
 		return nil, tx.Error
 	}
@@ -70,7 +74,7 @@ func (m messageDataAccessor) EditMessage(ctx context.Context, message *Messages)
 	// )
 	message.UpdateAt = time.Now()
 
-	tx := m.database.Save(&message)
+	tx := m.database.WithContext(ctx).Save(&message)
 	if tx.Error != nil {
 		return nil, tx.Error
 	}
@@ -79,7 +83,7 @@ func (m messageDataAccessor) EditMessage(ctx context.Context, message *Messages)
 }
 
 func (m messageDataAccessor) DeleteAll(ctx context.Context) error {
-	tx := m.database.Exec("delete from messages")
+	tx := m.database.WithContext(ctx).Where("1 = 1").Delete(&Messages{})
 	if tx.Error != nil {
 		return tx.Error
 	}
@@ -88,7 +92,7 @@ func (m messageDataAccessor) DeleteAll(ctx context.Context) error {
 
 func (m messageDataAccessor) GetMessages(ctx context.Context, messageFrom, messageTo, offSet, limit uint64) ([]*Messages, error) {
 	var messages []*Messages
-	tx := m.database.Raw("select * from messages where message_from = ? and message_to = ? limit ? offset ?", messageFrom, messageTo, limit, offSet).Scan(&messages)
+	tx := m.database.WithContext(ctx).Raw("select * from messages where message_from = ? and message_to = ? limit ? offset ?", messageFrom, messageTo, limit, offSet).Scan(&messages)
 	if tx.Error != nil {
 		return nil, tx.Error
 	}
