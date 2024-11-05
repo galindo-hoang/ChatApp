@@ -10,6 +10,7 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"log"
+	"os"
 )
 
 var (
@@ -18,6 +19,10 @@ var (
 )
 
 func InitializeAndMigrateUpDB(databaseConfig configs.Database /*, logger *zap.Logger*/) (*sql.DB, func(), error) {
+	var host = os.Getenv("DB_HOST")
+	if len(host) != 0 {
+		databaseConfig.Host = host
+	}
 	connectionString := fmt.Sprintf(
 		"%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local",
 		databaseConfig.Username,

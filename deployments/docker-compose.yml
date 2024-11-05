@@ -1,0 +1,36 @@
+services:
+  chat_app:
+    depends_on:
+      - mysql
+    build:
+      context: ../
+    networks:
+      - bridge
+    ports:
+      - 80:8081
+    environment:
+      - DB_HOST=host.docker.internal
+    deploy:
+      restart_policy:
+        condition: on-failure
+  mysql:
+    image: mysql:latest
+    container_name: mysql
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYPASSWORD:-12345678}
+    volumes:
+      - mysql-chatapp:/var/lib/mysql
+    networks:
+      - bridge
+    ports:
+      - 3306:3306
+    expose:
+      - 3306
+
+volumes:
+  mysql-chatapp:
+
+networks:
+  bridge:
+    driver: bridge
