@@ -6,6 +6,7 @@ import (
 
 var WireSet = wire.NewSet(
 	NewHash,
-	NewAccount,
 	NewToken,
+	NewAccount,
+	NewRelationship,
 )

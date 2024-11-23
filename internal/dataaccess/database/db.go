@@ -6,6 +6,7 @@ import (
 	_ "embed"
 	"fmt"
 	"github.com/ChatService/internal/configs"
+	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -17,6 +18,28 @@ var (
 	//go:embed migrations/mysql/0001.initialize.sql
 	byteMigrate []byte
 )
+
+func InitializeGraphDB(graphConfig configs.GraphDataBase /*, logger *zap.Logger*/) (neo4j.DriverWithContext, func(), error) {
+	ctx := context.Background()
+	dbUri := fmt.Sprintf("%v://%v", graphConfig.Database, graphConfig.Username)
+	driver, err := neo4j.NewDriverWithContext(dbUri, neo4j.BasicAuth(graphConfig.Username, graphConfig.Password, ""))
+
+	if err != nil {
+		fmt.Printf("Failed to connect to Neo4j %v\n", err)
+		return nil, nil, err
+	}
+
+	err = driver.VerifyConnectivity(ctx)
+	if err != nil {
+		fmt.Printf("Failed to verify connect to Neo4j %v\n", err)
+		return nil, nil, err
+	}
+
+	cleanup := func() {
+		driver.Close(ctx)
+	}
+	return driver, cleanup, nil
+}
 
 func InitializeAndMigrateUpDB(databaseConfig configs.Database /*, logger *zap.Logger*/) (*sql.DB, func(), error) {
 	var host = os.Getenv("DB_HOST")

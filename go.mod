@@ -5,6 +5,7 @@ go 1.21.2
 require (
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/google/wire v0.6.0
+	github.com/neo4j/neo4j-go-driver/v5 v5.26.0
 	github.com/stretchr/testify v1.9.0
 	go.uber.org/zap v1.27.0
 	golang.org/x/crypto v0.28.0

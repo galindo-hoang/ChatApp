@@ -5,6 +5,8 @@ import "github.com/google/wire"
 var WireSet = wire.NewSet(
 	InitializeAccountDataAccessor,
 	InitializeMessageDataAccessor,
+	InitializeRelationshipDataAccessor,
 	InitializeAndMigrateUpDB,
 	InitializeGorm,
+	InitializeGraphDB,
 )

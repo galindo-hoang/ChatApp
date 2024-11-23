@@ -17,11 +17,12 @@ type Account interface {
 }
 
 type account struct {
-	accountDataAccessor database.AccountDataAccessor
-	takenAccountCache   cache.TakenAccountEmail
-	db                  *gorm.DB
-	hashLogic           Hash
-	tokenLogic          Token
+	relationshipDataAccessor database.RelationshipDataAccessor
+	accountDataAccessor      database.AccountDataAccessor
+	takenAccountCache        cache.TakenAccountEmail
+	tokenLogic               Token
+	hashLogic                Hash
+	db                       *gorm.DB
 }
 
 func NewAccount(
@@ -30,13 +31,15 @@ func NewAccount(
 	tokenLogic Token,
 	takenAccountCache cache.TakenAccountEmail,
 	accountDataAccessor database.AccountDataAccessor,
+	relationshipDataAccessor database.RelationshipDataAccessor,
 ) Account {
 	return &account{
-		db:                  db,
-		hashLogic:           hashLogic,
-		tokenLogic:          tokenLogic,
-		takenAccountCache:   takenAccountCache,
-		accountDataAccessor: accountDataAccessor,
+		db:                       db,
+		hashLogic:                hashLogic,
+		tokenLogic:               tokenLogic,
+		takenAccountCache:        takenAccountCache,
+		accountDataAccessor:      accountDataAccessor,
+		relationshipDataAccessor: relationshipDataAccessor,
 	}
 }
 
@@ -67,6 +70,8 @@ func (a *account) isAccountEmailTaken(ctx context.Context, email string) (bool, 
 }
 
 func (a *account) CreateAccount(ctx context.Context, params CreateAccountParams) (CreateAccountResponse, error) {
+	fmt.Println("CreateAccount creating...")
+
 	isExist, err := a.isAccountEmailTaken(ctx, params.Email)
 	if err != nil {
 		return CreateAccountResponse{}, errors.New(fmt.Sprintf("fail to check account email taken: %s", err.Error()))
@@ -86,6 +91,11 @@ func (a *account) CreateAccount(ctx context.Context, params CreateAccountParams)
 			Email:       params.Email,
 			Password:    hashPassword,
 		})
+		err = a.relationshipDataAccessor.CreateNode(ctx, account)
+		if err != nil {
+			fmt.Printf("fail to create node: %s", err.Error())
+			return err
+		}
 		accountId = account.Id
 
 		return nil

@@ -13,3 +13,9 @@ auth:
   token:
     expires_in: 24
     signed_key: hello_world
+graphdb:
+  type: neo4j
+  database: neo4j
+  password: 12345678
+  host: 0.0.0.0
+  username: neo4j

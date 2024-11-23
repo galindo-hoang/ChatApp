@@ -11,9 +11,10 @@ import (
 type ConfigFilePath string
 
 type Config struct {
-	Database Database `yaml:"database"`
-	Auth     Auth     `yaml:"auth"`
-	Http     Http     `yaml:"http"`
+	Database Database      `yaml:"database"`
+	Auth     Auth          `yaml:"auth"`
+	Http     Http          `yaml:"http"`
+	GraphDB  GraphDataBase `yaml:"graphdb"`
 }
 
 func NewConfig(filePath ConfigFilePath) (Config, error) {
