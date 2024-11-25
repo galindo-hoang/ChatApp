@@ -24,13 +24,17 @@ func NewRelationship(
 }
 
 func (r *relationship) CreateNode(ctx context.Context, node AccountResponse) error {
-	return nil
+	return r.relationshipDataAccessor.CreateNode(ctx, &database.Accounts{
+		Id:          node.ID,
+		Email:       node.Email,
+		AccountName: node.AccountName,
+	})
 }
 
 func (r *relationship) FollowingPerson(ctx context.Context, from uint64, to uint64) error {
-	return nil
+	return r.relationshipDataAccessor.CreateRelationship(ctx, from, to)
 }
 
 func (r *relationship) UnfollowingPerson(ctx context.Context, from uint64, to uint64) error {
-	return nil
+	return r.relationshipDataAccessor.RemoveRelationship(ctx, from, to)
 }

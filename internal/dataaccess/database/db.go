@@ -20,8 +20,9 @@ var (
 )
 
 func InitializeGraphDB(graphConfig configs.GraphDataBase /*, logger *zap.Logger*/) (neo4j.DriverWithContext, func(), error) {
+	fmt.Println("Initializing graph database...")
 	ctx := context.Background()
-	dbUri := fmt.Sprintf("%v://%v", graphConfig.Database, graphConfig.Username)
+	dbUri := fmt.Sprintf("%v://%v", graphConfig.Database, graphConfig.Host)
 	driver, err := neo4j.NewDriverWithContext(dbUri, neo4j.BasicAuth(graphConfig.Username, graphConfig.Password, ""))
 
 	if err != nil {
@@ -41,7 +42,8 @@ func InitializeGraphDB(graphConfig configs.GraphDataBase /*, logger *zap.Logger*
 	return driver, cleanup, nil
 }
 
-func InitializeAndMigrateUpDB(databaseConfig configs.Database /*, logger *zap.Logger*/) (*sql.DB, func(), error) {
+func InitializeDB(databaseConfig configs.Database /*, logger *zap.Logger*/) (*sql.DB, func(), error) {
+	fmt.Println("Initializing database...")
 	var host = os.Getenv("DB_HOST")
 	if len(host) != 0 {
 		databaseConfig.Host = host
@@ -68,13 +70,6 @@ func InitializeAndMigrateUpDB(databaseConfig configs.Database /*, logger *zap.Lo
 	return db, cleanup, err
 }
 
-func migrateUp(context context.Context, db *gorm.DB) error {
-	if err := db.AutoMigrate(Accounts{}, Messages{}); err != nil {
-		return err
-	}
-	return nil
-}
-
 func InitializeGorm(db *sql.DB, databaseConfig configs.Database) (*gorm.DB, error) {
 	var tx *gorm.DB
 	var err error
@@ -92,9 +87,5 @@ func InitializeGorm(db *sql.DB, databaseConfig configs.Database) (*gorm.DB, erro
 		return nil, err
 	}
 
-	err = migrateUp(context.Background(), tx)
-	if err != nil {
-		log.Printf("error migrating database: %+v", err)
-	}
 	return tx, nil
 }

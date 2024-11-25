@@ -5,6 +5,8 @@
     <inspection_tool class="GoDfaErrorMayBeNotNil" enabled="true" level="WARNING" enabled_by_default="true">
       <functions>
         <function importPath="github.com/ChatService/internal/dataaccess/database" name="getAccountAccessor" />
+        <function importPath="github.com/ChatService/internal/wiring" name="GetAccountLogic" />
+        <function importPath="github.com/ChatService/internal/wiring" name="GetRelationshipLogic" />
       </functions>
     </inspection_tool>
   </profile>

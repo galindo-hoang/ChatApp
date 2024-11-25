@@ -15,9 +15,16 @@ type Config struct {
 	Auth     Auth          `yaml:"auth"`
 	Http     Http          `yaml:"http"`
 	GraphDB  GraphDataBase `yaml:"graphdb"`
+	Grpc     GRPC          `yaml:"grpc"`
 }
 
+var instance *Config = nil
+
 func NewConfig(filePath ConfigFilePath) (Config, error) {
+	if instance != nil {
+		return *instance, nil
+	}
+
 	var (
 		configBytes = configs.DefaultConfigBytes
 		config      = Config{}
@@ -35,5 +42,7 @@ func NewConfig(filePath ConfigFilePath) (Config, error) {
 	if err != nil {
 		return Config{}, fmt.Errorf("failed to unmarshal YAML: %v", err)
 	}
+	instance = &config
+
 	return config, nil
 }

@@ -23,7 +23,7 @@ func getAccountAccessor(path configs.ConfigFilePath) (AccountDataAccessor, func(
 		return nil, nil, err
 	}
 	database := config.Database
-	db, cleanup, err := InitializeAndMigrateUpDB(database)
+	db, cleanup, err := InitializeDB(database)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -44,7 +44,7 @@ func getMessageAccessor(path configs.ConfigFilePath) (MessageDataAccessor, func(
 		return nil, nil, err
 	}
 	database := config.Database
-	db, cleanup, err := InitializeAndMigrateUpDB(database)
+	db, cleanup, err := InitializeDB(database)
 	if err != nil {
 		return nil, nil, err
 	}

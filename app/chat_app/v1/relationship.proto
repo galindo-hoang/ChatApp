@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+option go_package = "internal/generated/chat_app/v1";
+
+package chat_app.v1;
+
+
+service RelationshipService {
+  rpc CreateNode(CreateAccountRequest) returns (CreateAccountResponse) {}
+  rpc FollowingPerson(MakeRelationshipRequest) returns (MakeRelationshipResponse) {}
+  rpc UnFollowingPerson(MakeRelationshipRequest) returns (MakeRelationshipResponse) {}
+}
+
+message CreateAccountRequest {
+  uint64 account_id = 1;
+  string account_name = 2;
+  string email = 3;
+}
+
+message MakeRelationshipRequest {
+  uint64 from = 1;
+  uint64 to = 2;
+}
+
+message MakeRelationshipResponse {
+  bool isSuccess = 1;
+  string message = 2;
+}
+
+message CreateAccountResponse {
+  bool isSuccess = 1;
+  string message = 2;
+}

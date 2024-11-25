@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/ChatService/internal/dataaccess/cache"
 	"github.com/ChatService/internal/dataaccess/database"
+	pb "github.com/ChatService/internal/generated/chat_app/v1"
 	"gorm.io/gorm"
 	"time"
 )
@@ -17,29 +18,29 @@ type Account interface {
 }
 
 type account struct {
-	relationshipDataAccessor database.RelationshipDataAccessor
-	accountDataAccessor      database.AccountDataAccessor
-	takenAccountCache        cache.TakenAccountEmail
-	tokenLogic               Token
-	hashLogic                Hash
-	db                       *gorm.DB
+	accountDataAccessor database.AccountDataAccessor
+	takenAccountCache   cache.TakenAccountEmail
+	tokenLogic          Token
+	hashLogic           Hash
+	db                  *gorm.DB
+	grpc                pb.RelationshipServiceClient
 }
 
 func NewAccount(
 	db *gorm.DB,
 	hashLogic Hash,
 	tokenLogic Token,
+	grpc pb.RelationshipServiceClient,
 	takenAccountCache cache.TakenAccountEmail,
 	accountDataAccessor database.AccountDataAccessor,
-	relationshipDataAccessor database.RelationshipDataAccessor,
 ) Account {
 	return &account{
-		db:                       db,
-		hashLogic:                hashLogic,
-		tokenLogic:               tokenLogic,
-		takenAccountCache:        takenAccountCache,
-		accountDataAccessor:      accountDataAccessor,
-		relationshipDataAccessor: relationshipDataAccessor,
+		db:                  db,
+		grpc:                grpc,
+		hashLogic:           hashLogic,
+		tokenLogic:          tokenLogic,
+		takenAccountCache:   takenAccountCache,
+		accountDataAccessor: accountDataAccessor,
 	}
 }
 
@@ -82,20 +83,31 @@ func (a *account) CreateAccount(ctx context.Context, params CreateAccountParams)
 
 	var accountId uint64
 	err = a.db.Transaction(func(tx *gorm.DB) error {
+		accountAccessor := a.accountDataAccessor.WithDatabase(tx)
 		hashPassword, err := a.hashLogic.Hash(ctx, params.Password)
 		if err != nil {
 			return err
 		}
-		account, err := a.accountDataAccessor.CreateAccount(ctx, &database.Accounts{
+
+		account, err := accountAccessor.CreateAccount(ctx, &database.Accounts{
 			AccountName: params.AccountName,
 			Email:       params.Email,
 			Password:    hashPassword,
 		})
-		err = a.relationshipDataAccessor.CreateNode(ctx, account)
+		res, err := a.grpc.CreateNode(ctx, &pb.CreateAccountRequest{
+			AccountId:   account.Id,
+			Email:       account.Email,
+			AccountName: account.AccountName,
+		})
 		if err != nil {
-			fmt.Printf("fail to create node: %s", err.Error())
+			fmt.Printf("fail to call grpc: %s", err.Error())
 			return err
 		}
+
+		if !res.IsSuccess {
+			return errors.New(fmt.Sprintf("fail to create account: %s", res.Message))
+		}
+
 		accountId = account.Id
 
 		return nil

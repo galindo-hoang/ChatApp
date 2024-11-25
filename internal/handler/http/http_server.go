@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/ChatService/internal/configs"
+	"github.com/ChatService/internal/handler"
 	"github.com/ChatService/internal/logic"
 	"io"
 	"net/http"
@@ -12,24 +12,7 @@ import (
 	"time"
 )
 
-type HttpServer interface {
-	Start(ctx context.Context)
-}
-
-type httpServer struct {
-	accountLogic logic.Account
-	configs      configs.Config
-}
-
-func NewHttpServer(accountLogic logic.Account, configs configs.Config) HttpServer {
-	return &httpServer{
-		configs:      configs,
-		accountLogic: accountLogic,
-	}
-}
-
-func middleware(funcHandler func(http.ResponseWriter, *http.Request)) func(http.ResponseWriter, *http.Request) {
-	fmt.Println("set up")
+func Middleware(funcHandler func(http.ResponseWriter, *http.Request)) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("running....")
 		// Set json
@@ -45,18 +28,6 @@ func middleware(funcHandler func(http.ResponseWriter, *http.Request)) func(http.
 			return
 		}
 		funcHandler(w, r)
-	}
-}
-
-func (h *httpServer) Start(ctx context.Context) {
-
-	http.HandleFunc("/v1/sessions", middleware(h.createSession))
-	http.HandleFunc("/v1/sessions/verify", middleware(h.verifySession))
-	http.HandleFunc("/v1/accounts", middleware(h.createAccount))
-
-	fmt.Printf("listenning address %v\n", h.configs.Http.Address)
-	if err := http.ListenAndServe(h.configs.Http.Address, nil); err != nil {
-		fmt.Println(err)
 	}
 }
 
@@ -83,7 +54,24 @@ func jsonReqHttp[T any](r *http.Request, data *T) error {
 	return json.Unmarshal(body, data)
 }
 
-func (h *httpServer) createAccount(w http.ResponseWriter, r *http.Request) {
+func getLogic(w http.ResponseWriter) (logic.Account, func(), error) {
+	accountLogic, clearLogic, err := handler.GetAccountLogic("")
+
+	if err != nil {
+		fmt.Printf("get accountLogic fail: %v\n", err.Error())
+		jsonResHttp(w, http.StatusBadRequest, Response[any]{
+			Data:    err,
+			Success: false,
+			Message: err.Error(),
+		})
+		clearLogic()
+		return nil, nil, err
+	}
+
+	return accountLogic, clearLogic, nil
+}
+
+func CreateAccount(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		jsonResHttp(w, http.StatusMethodNotAllowed, Response[any]{
 			Data:    nil,
@@ -103,10 +91,18 @@ func (h *httpServer) createAccount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-	defer cancel()
+	accountLogic, clearLogic, err := getLogic(w)
+	if err != nil {
+		return
+	}
 
-	res, err := h.accountLogic.CreateAccount(ctx, parsedBody)
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer func() {
+		cancel()
+		clearLogic()
+	}()
+
+	res, err := accountLogic.CreateAccount(ctx, parsedBody)
 	if err != nil {
 		jsonResHttp(w, http.StatusBadRequest, Response[any]{
 			Data:    err,
@@ -123,7 +119,7 @@ func (h *httpServer) createAccount(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (h *httpServer) createSession(w http.ResponseWriter, r *http.Request) {
+func CreateSession(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		jsonResHttp(w, http.StatusMethodNotAllowed, Response[any]{
 			Data:    nil,
@@ -143,10 +139,18 @@ func (h *httpServer) createSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-	defer cancel()
+	accountLogic, clearLogic, err := getLogic(w)
+	if err != nil {
+		return
+	}
 
-	res, err := h.accountLogic.CreateSession(ctx, parsedBody)
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer func() {
+		cancel()
+		clearLogic()
+	}()
+
+	res, err := accountLogic.CreateSession(ctx, parsedBody)
 	if err != nil {
 		jsonResHttp(w, http.StatusBadRequest, Response[any]{
 			Data:    err,
@@ -163,7 +167,7 @@ func (h *httpServer) createSession(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (h *httpServer) verifySession(w http.ResponseWriter, r *http.Request) {
+func VerifySession(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "GET" {
 		jsonResHttp(w, http.StatusMethodNotAllowed, Response[any]{
 			Data:    nil,
@@ -182,10 +186,18 @@ func (h *httpServer) verifySession(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-	defer cancel()
+	accountLogic, clearLogic, err := getLogic(w)
+	if err != nil {
+		return
+	}
 
-	if err := h.accountLogic.ValidateSession(ctx, session); err != nil {
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer func() {
+		cancel()
+		clearLogic()
+	}()
+
+	if err := accountLogic.ValidateSession(ctx, session); err != nil {
 		jsonResHttp(w, http.StatusUnauthorized, Response[any]{
 			Data:    nil,
 			Success: true,

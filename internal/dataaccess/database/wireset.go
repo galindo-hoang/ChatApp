@@ -6,7 +6,7 @@ var WireSet = wire.NewSet(
 	InitializeAccountDataAccessor,
 	InitializeMessageDataAccessor,
 	InitializeRelationshipDataAccessor,
-	InitializeAndMigrateUpDB,
+	InitializeDB,
 	InitializeGorm,
 	InitializeGraphDB,
 )

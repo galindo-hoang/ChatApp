@@ -14,7 +14,7 @@ type Messages struct {
 	MessageTo   uint64    `gorm:"column:message_to"`
 	Content     string    `gorm:"column:content; NOT NULL; check:length(content)>0"`
 	CreatedAt   time.Time `gorm:"column:created_at; NOT NULL"`
-	UpdateAt    time.Time `gorm:"column:created_at; NOT NULL"`
+	UpdateAt    time.Time `gorm:"column:update_at; NOT NULL"`
 
 	// foreign key
 	AccountFrom *Accounts `gorm:"foreignKey:message_from; constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`

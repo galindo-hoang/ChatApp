@@ -14,10 +14,12 @@ type Accounts struct {
 }
 
 type AccountDataAccessor interface {
-	GetAccountByID(ctx context.Context, id uint64) (*Accounts, error)
-	CreateAccount(ctx context.Context, account *Accounts) (*Accounts, error)
-	GetAccountByEmail(ctx context.Context, email string) (*Accounts, error)
 	DeleteAll(ctx context.Context) error
+	GetAccountByID(ctx context.Context, id uint64) (*Accounts, error)
+	GetAccountByEmail(ctx context.Context, email string) (*Accounts, error)
+	CreateAccount(ctx context.Context, account *Accounts) (*Accounts, error)
+
+	WithDatabase(database *gorm.DB) AccountDataAccessor
 }
 
 type accountDataAccessor struct {
@@ -57,6 +59,10 @@ func (a accountDataAccessor) DeleteAll(ctx context.Context) error {
 		return tx.Error
 	}
 	return nil
+}
+
+func (a accountDataAccessor) WithDatabase(database *gorm.DB) AccountDataAccessor {
+	return &accountDataAccessor{database: database}
 }
 
 func InitializeAccountDataAccessor(db *gorm.DB) AccountDataAccessor {

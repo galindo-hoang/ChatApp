@@ -10,6 +10,7 @@ import (
 	"github.com/ChatService/internal/configs"
 	"github.com/ChatService/internal/dataaccess/cache"
 	"github.com/ChatService/internal/dataaccess/database"
+	"github.com/ChatService/internal/dataaccess/services"
 )
 
 // Injectors from wire.go:
@@ -33,7 +34,7 @@ func initializeAccount(filePath configs.ConfigFilePath) (Account, func(), error)
 		return nil, nil, err
 	}
 	configsDatabase := config.Database
-	db, cleanup, err := database.InitializeAndMigrateUpDB(configsDatabase)
+	db, cleanup, err := database.InitializeDB(configsDatabase)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -49,10 +50,17 @@ func initializeAccount(filePath configs.ConfigFilePath) (Account, func(), error)
 		cleanup()
 		return nil, nil, err
 	}
+	grpc := config.Grpc
+	relationshipServiceClient, cleanup2, err := services.InitializeRelationshipClient(grpc)
+	if err != nil {
+		cleanup()
+		return nil, nil, err
+	}
 	takenAccountEmail := cache.NewTakenAccountEmail()
 	accountDataAccessor := database.InitializeAccountDataAccessor(gormDB)
-	logicAccount := NewAccount(gormDB, logicHash, logicToken, takenAccountEmail, accountDataAccessor)
+	logicAccount := NewAccount(gormDB, logicHash, logicToken, relationshipServiceClient, takenAccountEmail, accountDataAccessor)
 	return logicAccount, func() {
+		cleanup2()
 		cleanup()
 	}, nil
 }

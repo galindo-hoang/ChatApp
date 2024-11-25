@@ -2,16 +2,14 @@ package main
 
 import (
 	"context"
-	"github.com/ChatService/internal/wiring"
+	"github.com/ChatService/internal/app"
 )
 
 func main() {
-	server, f, err := wiring.InitializeStandaloneServer("")
+	server, err := app.InitializeStandaloneServer("")
 	if err != nil {
-		f()
 		panic(err)
 	}
-	defer f()
 
 	server.Start(context.Background())
 }
