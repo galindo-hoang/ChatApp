@@ -1,3 +1,7 @@
+create database chat;
+
+use chat;
+
 create table if not exists accounts (
     id BIGINT UNSIGNED AUTO_INCREMENT,
     account_name text NOT NULL,
@@ -25,9 +29,3 @@ create table if not exists messages (
 );
 
 create index idx_messages on messages (message_id);
-
-
--- MIGRATE
-DROP TABLE IF EXISTS messages;
-
-DROP TABLE IF EXISTS accounts;

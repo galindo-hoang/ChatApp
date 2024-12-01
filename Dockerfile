@@ -1,4 +1,4 @@
-FROM golang:1.21.2
+FROM golang:1.22.7
 
 # make directory is root folder in images
 WORKDIR /app

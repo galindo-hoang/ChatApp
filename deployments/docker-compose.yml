@@ -2,10 +2,11 @@ services:
   chat_app:
     depends_on:
       - mysql
+      - neo4j
     build:
       context: ../
     networks:
-      - bridge
+      - checking
     ports:
       - 80:8081
     environment:
@@ -20,17 +21,36 @@ services:
     environment:
       - MYSQL_ROOT_PASSWORD=${MYPASSWORD:-12345678}
     volumes:
-      - mysql-chatapp:/var/lib/mysql
+      - mysql:/var/lib/mysql
+      - ../internal/dataaccess/database/migrations/mysql/0001.initialize.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
-      - bridge
+      - checking
     ports:
       - 3306:3306
     expose:
       - 3306
+  neo4j:
+    image: neo4j:latest
+    container_name: neo4j
+    restart: always
+    ports:
+      - 7687:7687
+      - 7474:7474
+    volumes:
+      - neo4j:/data
+    environment:
+      - NEO4J_AUTH=${NEO_AUTH:-neo4j/12345678}
+    networks:
+      - checking
+    expose:
+      - 7474
 
 volumes:
-  mysql-chatapp:
+  mysql:
+    driver: local
+  neo4j:
+
 
 networks:
-  bridge:
+  checking:
     driver: bridge

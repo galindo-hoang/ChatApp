@@ -20,8 +20,14 @@ var (
 )
 
 func InitializeGraphDB(graphConfig configs.GraphDataBase /*, logger *zap.Logger*/) (neo4j.DriverWithContext, func(), error) {
-	fmt.Println("Initializing graph database...")
+	fmt.Printf("Initializing graph database... %v\n", graphConfig)
 	ctx := context.Background()
+
+	var host = os.Getenv("DB_HOST")
+	if len(host) != 0 {
+		graphConfig.Host = host
+	}
+
 	dbUri := fmt.Sprintf("%v://%v", graphConfig.Database, graphConfig.Host)
 	driver, err := neo4j.NewDriverWithContext(dbUri, neo4j.BasicAuth(graphConfig.Username, graphConfig.Password, ""))
 
@@ -37,13 +43,14 @@ func InitializeGraphDB(graphConfig configs.GraphDataBase /*, logger *zap.Logger*
 	}
 
 	cleanup := func() {
+		fmt.Println("Clean-up graph database...")
 		driver.Close(ctx)
 	}
 	return driver, cleanup, nil
 }
 
 func InitializeDB(databaseConfig configs.Database /*, logger *zap.Logger*/) (*sql.DB, func(), error) {
-	fmt.Println("Initializing database...")
+	fmt.Printf("Initializing database... %v\n", databaseConfig)
 	var host = os.Getenv("DB_HOST")
 	if len(host) != 0 {
 		databaseConfig.Host = host
@@ -64,6 +71,7 @@ func InitializeDB(databaseConfig configs.Database /*, logger *zap.Logger*/) (*sq
 	}
 
 	cleanup := func() {
+		fmt.Println("Clean-up database...")
 		db.Close()
 	}
 
