@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import FriendList from '../components/FriendList';
 import ChatBox from '../components/ChatBox';
+import FriendList from '../components/FriendList';
+import FindFriend from '../components/FindFriend';
 import MessageList from '../components/MessageList';
 import '../styles/ChatPage.css';
 
@@ -17,13 +18,17 @@ const ChatPage: React.FC = () => {
     };
 
     const handleSendMessage = (message: string) => {
-        // Implement sending message to the server
         console.log(`Sending message to ${selectedFriend?.name}: ${message}`);
+    };
+
+    const refreshFriendList = () => {
+        // Trigger a refresh of the friend list in the FriendList component
     };
 
     return (
         <div className="chat-page">
             <div className="friends-section">
+                <FindFriend onFriendAdded={refreshFriendList} />
                 <FriendList onSelectFriend={handleSelectFriend} />
             </div>
             <div className="chat-section">

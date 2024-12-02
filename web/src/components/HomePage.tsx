@@ -9,8 +9,6 @@ const HomePage: React.FC = () => {
 
     useEffect(() => {
         const token = LocalStorageWrapper.getToken()
-        alert(`hello world`)
-
         if (token) {
             const config = {
                 headers: {

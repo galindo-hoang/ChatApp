@@ -8,7 +8,7 @@ type Friend = {
     status: 'online' | 'offline';
 };
 
-const FriendList: React.FC<{ onSelectFriend: (friend: Friend) => void }> = ({onSelectFriend}) => {
+const FriendList: React.FC<{ onSelectFriend: (friend: Friend) => void; refresh?: boolean }> = ({ onSelectFriend, refresh }) => {
     const [friends, setFriends] = useState<Friend[]>([]);
 
     useEffect(() => {
@@ -24,7 +24,7 @@ const FriendList: React.FC<{ onSelectFriend: (friend: Friend) => void }> = ({onS
             .catch(error => {
                 console.error('Error fetching friends:', error);
             });
-    }, []);
+    }, [refresh]);
 
     return (
         <ul className="friend-list">
