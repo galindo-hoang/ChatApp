@@ -60,13 +60,19 @@ func GetRelationshipLogic(path configs.ConfigFilePath) (logic.Relationship, func
 	if err != nil {
 		return nil, nil, err
 	}
-	graphDataBase := config.GraphDB
-	driverWithContext, cleanup, err := database.InitializeGraphDB(graphDataBase)
+	configsDatabase := config.Database
+	db, cleanup, err := database.InitializeDB(configsDatabase)
 	if err != nil {
 		return nil, nil, err
 	}
-	relationshipDataAccessor := database.InitializeRelationshipDataAccessor(driverWithContext)
-	relationship := logic.NewRelationship(relationshipDataAccessor)
+	gormDB, err := database.InitializeGorm(db, configsDatabase)
+	if err != nil {
+		cleanup()
+		return nil, nil, err
+	}
+	relationshipDataAccessor := database.InitializeMysqlDataAccessor(gormDB)
+	accountDataAccessor := database.InitializeAccountDataAccessor(gormDB)
+	relationship := logic.NewRelationship(relationshipDataAccessor, accountDataAccessor)
 	return relationship, func() {
 		cleanup()
 	}, nil

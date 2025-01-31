@@ -2,75 +2,152 @@ package database
 
 import (
 	"context"
-	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
+	"fmt"
+
+	"gorm.io/gorm"
 )
 
 type RelationshipDataAccessor interface {
-	CreateNode(ctx context.Context, node *Accounts) error
-	CreateRelationship(ctx context.Context, from uint64, to uint64) error
-	RemoveRelationship(ctx context.Context, from uint64, to uint64) error
+	// CreateNode(ctx context.Context, node *database.Accounts) error
+	CreateRelationship(context.Context, uint64, uint64) error
+	RemoveRelationship(context.Context, uint64, uint64) error
+	GetListRequests(context.Context, uint64) ([]*uint64, error)
+	GetListPendingRequesters(context.Context, uint64) ([]*uint64, error)
+	UpdateRelationship(context.Context, uint64, uint64) error
+	GetListFriends(context.Context, uint64) ([]*uint64, error)
 }
 
-var databaseName = "neo4j"
-
-type relationshipDataAccessor struct {
-	driver neo4j.DriverWithContext
+type mysqlDataAccessor struct {
+	databaseName string
+	driver       *gorm.DB
 }
 
-func InitializeRelationshipDataAccessor(driver neo4j.DriverWithContext) RelationshipDataAccessor {
-	return &relationshipDataAccessor{driver: driver}
+func InitializeMysqlDataAccessor(driver *gorm.DB) RelationshipDataAccessor {
+	return &mysqlDataAccessor{
+		databaseName: "mysql",
+		driver:       driver,
+	}
 }
 
-func (a relationshipDataAccessor) CreateNode(ctx context.Context, node *Accounts) error {
-	session := a.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: databaseName})
-	defer session.Close(ctx)
-	_, err := session.ExecuteWrite(ctx, func(tx neo4j.ManagedTransaction) (any, error) {
-		r, err := tx.Run(ctx,
-			"CREATE (node:Person {id: $id, name: $name, email: $email})",
-			map[string]any{
-				"id":    node.Id,
-				"name":  node.AccountName,
-				"email": node.Email,
-			},
-		)
-		return r, err
+type UserFriend struct {
+	id     uint64 `gorm:"primaryKey; index; AUTO_INCREMENT"`
+	uid1   uint64
+	uid2   uint64
+	status string
+}
+
+func (r mysqlDataAccessor) CreateRelationship(ctx context.Context, from uint64, to uint64) error {
+	fmt.Println("Create relationship...")
+	var parsedData = make(map[string]interface{})
+	if from < to {
+		parsedData["uid1"] = from
+		parsedData["uid2"] = to
+		parsedData["status"] = "REQ_UID1"
+	} else {
+		parsedData["uid1"] = to
+		parsedData["uid2"] = from
+		parsedData["status"] = "REQ_UID2"
+	}
+	tx := r.driver.WithContext(ctx).Raw("insert into user_friend (uid1, uid2, status) values (?, ?, ?)", parsedData["uid1"], parsedData["uid1"], parsedData["status"])
+	return tx.Error
+}
+
+func (r mysqlDataAccessor) RemoveRelationship(ctx context.Context, from uint64, to uint64) error {
+	fmt.Println("Removing relationship...")
+
+	var parsedData = make(map[string]interface{})
+	if from < to {
+		parsedData["uid1"] = from
+		parsedData["uid2"] = to
+	} else {
+		parsedData["uid1"] = to
+		parsedData["uid2"] = from
+	}
+
+	tx := r.driver.WithContext(ctx).Where(&UserFriend{
+		uid1: parsedData["uid1"].(uint64),
+		uid2: parsedData["uid2"].(uint64),
 	})
-
-	return err
+	return tx.Error
 }
 
-func (a relationshipDataAccessor) CreateRelationship(ctx context.Context, from uint64, to uint64) error {
-	session := a.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: databaseName})
-	defer session.Close(ctx)
+func (r mysqlDataAccessor) GetListRequests(ctx context.Context, id uint64) ([]*uint64, error) {
+	fmt.Println("Retrieving requests...")
+	var results []*UserFriend
+	tx := r.driver.WithContext(ctx).Raw("select * from user_friend where (uid1 = ? status = 'REQ_UID1') OR (uid2 = ? status = 'REQ_UID2')", id, id).Scan(&results)
 
-	_, err := session.ExecuteWrite(ctx, func(tx neo4j.ManagedTransaction) (any, error) {
-		r, err := tx.Run(ctx,
-			"MATCH (from:Person {id: $from}), (to:Person {id: $to}) MERGE (from)-[:Following]->(to)",
-			map[string]any{
-				"from": from,
-				"to":   to,
-			},
-		)
-		return r, err
-	})
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
 
-	return err
+	var ids []*uint64
+
+	for _, result := range results {
+		if result.uid1 == id {
+			ids = append(ids, &result.uid2)
+		} else {
+			ids = append(ids, &result.uid1)
+		}
+	}
+	return ids, nil
 }
 
-func (a relationshipDataAccessor) RemoveRelationship(ctx context.Context, from uint64, to uint64) error {
-	session := a.driver.NewSession(ctx, neo4j.SessionConfig{DatabaseName: databaseName})
-	defer session.Close(ctx)
+func (r mysqlDataAccessor) GetListPendingRequesters(ctx context.Context, id uint64) ([]*uint64, error) {
+	fmt.Println("Retreving pending requests...")
 
-	_, err := session.ExecuteWrite(ctx, func(tx neo4j.ManagedTransaction) (any, error) {
-		r, err := tx.Run(ctx,
-			"MATCH (from:Person {id: $from})-[f:Following]->(to:Person {id: $to}) DELETE f",
-			map[string]any{
-				"from": from,
-				"to":   to,
-			},
-		)
-		return r, err
-	})
+	var results []*UserFriend
+	tx := r.driver.WithContext(ctx).Raw("select * from user_friend where (uid1 = ? status = 'REQ_UID2') OR (uid2 = ? status = 'REQ_UID1')", id, id).Scan(&results)
 
-	return err
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
+
+	var ids []*uint64
+
+	for _, result := range results {
+		if result.uid1 == id {
+			ids = append(ids, &result.uid2)
+		} else {
+			ids = append(ids, &result.uid1)
+		}
+	}
+	return ids, nil
+}
+
+func (r mysqlDataAccessor) UpdateRelationship(ctx context.Context, from uint64, to uint64) error {
+	fmt.Println("Update requests...")
+
+	var parsedData = make(map[string]interface{})
+	if from < to {
+		parsedData["uid1"] = from
+		parsedData["uid2"] = to
+	} else {
+		parsedData["uid1"] = to
+		parsedData["uid2"] = from
+	}
+
+	tx := r.driver.WithContext(ctx).Raw("update user_friend set status = 'FRIEND' where uid1 = ? and uid2 = ?", parsedData["uid1"], parsedData["uid2"])
+
+	return tx.Error
+}
+
+func (r mysqlDataAccessor) GetListFriends(ctx context.Context, from uint64) ([]*uint64, error) {
+	fmt.Println("Retrieving friends...")
+
+	var results []*UserFriend
+	tx := r.driver.WithContext(ctx).Raw("select * from user_friend where (uid1 = ? or uid2 = ?) AND status = 'FRIENDS'", from, from).Scan(&results)
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
+
+	var ids []*uint64
+
+	for _, result := range results {
+		if result.uid1 == from {
+			ids = append(ids, &result.uid2)
+		} else {
+			ids = append(ids, &result.uid1)
+		}
+	}
+	return ids, nil
 }

@@ -16,6 +16,7 @@ type Config struct {
 	Http     Http          `yaml:"http"`
 	GraphDB  GraphDataBase `yaml:"graphdb"`
 	Grpc     GRPC          `yaml:"grpc"`
+	Kafka    GRPC          `yaml:"grpc"`
 }
 
 var instance *Config = nil

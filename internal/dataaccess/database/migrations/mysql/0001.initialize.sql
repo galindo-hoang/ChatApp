@@ -29,3 +29,14 @@ create table if not exists messages (
 );
 
 create index idx_messages on messages (message_id);
+
+create table if not exists user_friend
+(
+    id     BIGINT UNSIGNED AUTO_INCREMENT,
+    uid1   BIGINT UNSIGNED,
+    uid2   BIGINT UNSIGNED,
+    STATUS ENUM ('REQ_UID1', 'REQ_UID2', 'FRIEND') NOT NULL,
+
+    primary key (id),
+    CHECK ( uid1 < uid2 )
+);

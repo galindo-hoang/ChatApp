@@ -4,12 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/ChatService/internal/handler"
-	"github.com/ChatService/internal/logic"
 	"io"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/ChatService/internal/handler"
+	"github.com/ChatService/internal/logic"
+	"github.com/ChatService/internal/utils"
 )
 
 func Middleware(funcHandler func(http.ResponseWriter, *http.Request)) func(http.ResponseWriter, *http.Request) {
@@ -210,4 +212,51 @@ func VerifySession(w http.ResponseWriter, r *http.Request) {
 			Message: "",
 		})
 	}
+}
+
+func getRelationshipLogic(w http.ResponseWriter) (logic.Relationship, func(), error) {
+	logic, clear, err := handler.GetRelationshipLogic("")
+	if err != nil {
+		fmt.Printf("get relationship logic fail: %v\n", err.Error())
+		jsonResHttp(w, http.StatusBadRequest, Response[any]{
+			Data:    err,
+			Success: false,
+			Message: err.Error(),
+		})
+		clear()
+		return nil, nil, err
+	}
+	return logic, clear, nil
+}
+
+func AddFriend(w http.ResponseWriter, r *http.Request) {
+	var session = strings.Split(r.Header.Get("Authorization"), " ")[1]
+	if session == "" {
+		jsonResHttp(w, http.StatusUnauthorized, Response[any]{
+			Data:    nil,
+			Success: true,
+			Message: "",
+		})
+	}
+	utils.
+}
+
+func RemoveFriend(w http.ResponseWriter, r *http.Request) {
+
+}
+
+func DeclineFriend(w http.ResponseWriter, r *http.Request) {
+
+}
+
+func AcceptRequest(w http.ResponseWriter, r *http.Request) {
+
+}
+
+func GetListRequests(w http.ResponseWriter, r *http.Request) {
+
+}
+
+func GetListPendings(w http.ResponseWriter, r *http.Request) {
+
 }
